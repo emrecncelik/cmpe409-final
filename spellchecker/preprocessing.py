@@ -70,21 +70,31 @@ class Preprocessor:
         return (token for token in text if self.is_not_number(token))
 
     def is_not_number(self, token: str):
-        return not all(
-            [ch in self.punctuations or ch in self._numbers for ch in token]
-        ) and self.is_not_punctuation(token)
+        return is_not_number(token, self.numbers, self.punctuations)
 
     def is_not_punctuation(self, token: str):
-        return not all([ch in self.punctuations for ch in token])
+        return is_not_punctuation(token, self.punctuations)
 
-    def lowercase(self, text: str) -> str:
+    @staticmethod
+    def lowercase(text: str) -> str:
         text = re.sub(r"İ", "i", text)
         text = re.sub(r"I", "ı", text)
         text = text.lower()
         return text
 
-    def normalize_i(self, text: str) -> str:
+    @staticmethod
+    def normalize_i(text: str) -> str:
         return text.replace("i̇", "i")
+
+
+def is_not_punctuation(token: str, puncts: set[str]) -> bool:
+    return not all([ch in puncts for ch in token])
+
+
+def is_not_number(token: str, nums: set[str], puncts: set[str]) -> bool:
+    return not all([ch in puncts or ch in nums for ch in token]) and is_not_punctuation(
+        token, puncts
+    )
 
 
 if __name__ == "__main__":
