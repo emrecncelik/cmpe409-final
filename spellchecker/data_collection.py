@@ -3,23 +3,23 @@ from __future__ import annotations
 import logging
 import pandas as pd
 from mediawiki import DisambiguationError, MediaWiki
-from nltk.tokenize import word_tokenize
+from nltk.tokenize import sent_tokenize
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
 
-def collect_from_wiki(min_word_count: int, n_pages: int = 2) -> pd.DataFrame:
+def collect_from_wiki(min_sent_count: int, n_pages: int = 2) -> pd.DataFrame:
     # Initialize instance for wikipedia api
     wiki = MediaWiki(lang="tr")
     wiki.user_agent = "cmpe409_assignment1_ec"
     collected_page_names = []
     collected_page_contents = []
-    word_count = 0
+    sent_count = 0
 
     # Collect random articles until we exceed min word count
-    with tqdm(total=min_word_count) as pbar:
-        while word_count < min_word_count:
+    with tqdm(total=min_sent_count) as pbar:
+        while sent_count < min_sent_count:
             try:
                 # Get page names
                 pages = [p for p in wiki.random(n_pages)]
@@ -32,10 +32,15 @@ def collect_from_wiki(min_word_count: int, n_pages: int = 2) -> pd.DataFrame:
                         collected_page_contents.append(p)
                     else:
                         collected_page_contents.append("")
+
                 # Count words
-                word_count_temp = len(word_tokenize(" ".join(collected_page_contents)))
-                pbar.update(word_count_temp)
-                word_count += word_count_temp
+                sent_count_temp = sum(
+                    len(sent_tokenize(content))
+                    for content in collected_page_contents[-len(pages) :]
+                )
+                pbar.update(sent_count_temp)
+                sent_count += sent_count_temp
+                print(sent_count)
             except DisambiguationError:
                 pass
 
@@ -44,3 +49,10 @@ def collect_from_wiki(min_word_count: int, n_pages: int = 2) -> pd.DataFrame:
             "content": collected_page_contents,
         }
     )
+
+
+if __name__ == "__main__":
+    data = collect_from_wiki(100000)
+    data["sents"] = data["content"].apply(sent_tokenize)
+    data["sent_counts"] = data["sents"].apply(len)
+    print(data["sent_counts"].sum())
