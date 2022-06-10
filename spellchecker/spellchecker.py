@@ -1,12 +1,12 @@
 from __future__ import annotations
 from typing import Callable
-from ngrams import NGramModel
+from ngrams import BigramLM
 
 
 class Spellchecker:
     def __init__(
         self,
-        lang_model: NGramModel,
+        lang_model: BigramLM,
         distance_function: Callable,
         max_edit_distance: int = 3,
     ) -> None:
