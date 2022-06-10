@@ -1,32 +1,20 @@
 from __future__ import annotations
-from collections import defaultdict
+from collections import Counter
+
+import logging
+import numpy as np
+import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
-class NGramModel:
+class BigramLM:
     def __init__(
-        self,
-        n: int = 2,
-        padding: bool = True,
-        char_level: bool = False,
-        bos_token: str = "<s>",
-        eos_token: str = "<\s>",
-        unk_token: str = "<unk>",
+        self, bos_token: str = "<s>", eos_token: str = "<\s>", unk_token: str = "<unk>"
     ) -> None:
-        self.n = n
-        self.padding = padding
-        self.char_level = char_level
         self.bos_token = bos_token
         self.eos_token = eos_token
         self.unk_token = unk_token
-
-        self._vocab = None
-        self._token2idx = {}
-        self._idx2token = {}
-        self._ngram_counts = {}
-
-    @property
-    def vocab(self):
-        return self._vocab
 
     @property
     def token2idx(self):
@@ -36,63 +24,80 @@ class NGramModel:
     def idx2token(self):
         return self._idx2token
 
-    @staticmethod
-    def apply_padding(
-        sequence: list[str],
-        n: int = 2,
-        bos_token: str = "<s>",
-        eos_token: str = "<\s>",
-    ):
-        return [bos_token] * (n - 1) + sequence + [eos_token] * (n - 1)
+    def train(self, sentences: list[list[str]]):
+        bigrams = []
+        counter = Counter()
+        for sentence in sentences:
+            sent = sentence.copy()
+            # Pad sentences with start/end token
+            sent.append(self.eos_token)
+            sent.insert(0, self.bos_token)
+            bigrams.append(list(zip(*[sent[i:] for i in range(2)])))
+            counter.update(Counter(sent))
 
-    @staticmethod
-    def ngramize(
-        sequence: list[str],
-        n: int = 2,
-        padding: bool = True,
-        char_level: bool = False,
-        bos_token: str = "<s>",
-        eos_token: str = "<\s>",
-    ):
-        if not char_level:
-            if padding:
-                sequence = NGramModel.apply_padding(sequence, n, bos_token, eos_token)
-            return list(zip(*[sequence[i:] for i in range(n)]))
-        else:
-            if padding:
-                sequence = [
-                    NGramModel.apply_padding(list(el), n, bos_token, eos_token)
-                    for el in sequence
-                ]
-            ngrams = []
-            for el in sequence:
-                ngrams.extend(list(zip(*[el[i:] for i in range(n)])))
-            return ngrams
+        # Calculate unigram counts
+        self.token_counts = dict(counter.most_common(None))
+        self.token_counts[self.unk_token] = 1
+        # Create vocabulary to access tokens
+        self._token2idx = {
+            token: i
+            for token, i in zip(self.token_counts.keys(), range(len(self.token_counts)))
+        }
+        self._idx2token = {i: token for token, i in self.token_counts.items()}
 
-    def train(self, sequences: list[list[str]]):
-        if not self.char_level:
-            ngrams = []
-            if self._vocab is None:
-                self._vocab = defaultdict(lambda: 0)
+        # Create bigram count matrix with simple smoothing
+        self.bigram_counts = np.ones(
+            shape=(len(self.token_counts), len(self.token_counts))
+        )
 
-            for sequence in sequences:
-                ngrams.append(
-                    self.ngramize(
-                        sequence,
-                        self.n,
-                        self.padding,
-                        self.char_level,
-                        self.bos_token,
-                        self.eos_token,
-                    )
+        # Fill bigram matrix by counting bigrams
+        for sentence_bigrams in bigrams:
+            for bigram in sentence_bigrams:
+                self.bigram_counts[self._token2idx[bigram[0]]][
+                    self._token2idx[bigram[1]]
+                ] += 1
+                logger.debug(
+                    f"Bigram count for {bigram}:",
+                    self.bigram_counts[self._token2idx[bigram[0]]][
+                        self._token2idx[bigram[1]]
+                    ],
                 )
-                for el in sequence:
-                    self._vocab[el] += 1
-                    idx = len(self._token2idx)
-                    self._token2idx[el] = idx
-                    self._idx2token[idx] = el
 
-            if self._ngram_counts is None:
-                self._ngram_counts
-        else:
-            pass
+    def predict_sentence_probability(self, sentence: list[str]):
+        # Pad sentence
+        sentence.append(self.eos_token)
+        sentence.insert(0, self.bos_token)
+
+        # Get bigrams from sentence
+        bigrams = list(zip(*[sentence[i:] for i in range(2)]))
+
+        # Calculate bigram probabilities for every bigram in the sentence
+        probabilities = list(map(self.predict_bigram_probability, bigrams))
+        logger.debug(
+            pd.DataFrame(
+                data=probabilities,
+                index=[" ".join(bi) for bi in bigrams],
+                columns=["probability"],
+            )
+        )
+        print()
+
+        # Multiply every bigram count in the sentence
+        return np.prod(probabilities)
+
+    def predict_bigram_probability(self, bigram: tuple(str)):
+        # Replace with unk token if token not in vocab
+        bigram = [tok if tok in self.token_counts else self.unk_token for tok in bigram]
+
+        # Calculate P(W_(n-1) | W_n)
+        return (
+            self.bigram_counts[self._token2idx[bigram[0]]][self._token2idx[bigram[1]]]
+            / self.token_counts[bigram[0]]
+        )
+
+    def get_bigram_count_df(self):
+        return pd.DataFrame(
+            data=self.bigram_counts,
+            index=self.token_counts.keys(),
+            columns=self.token_counts.keys(),
+        )
