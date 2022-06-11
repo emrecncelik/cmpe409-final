@@ -132,6 +132,7 @@ class Spellchecker:
         return token
 
 
+# From https://github.com/mammothb/symspellpy
 def case_transfer_matching(cased_text: str, uncased_text: str) -> str:
     """Transfers the casing from one text to another - assuming that they are
     'matching' texts, alias they have the same length.
@@ -157,6 +158,7 @@ def case_transfer_matching(cased_text: str, uncased_text: str) -> str:
     )
 
 
+# From https://github.com/mammothb/symspellpy
 def case_transfer_similar(cased_text: str, uncased_text: str) -> str:
     """Transfers the casing from one text to another - for similar (not matching)
     text.
