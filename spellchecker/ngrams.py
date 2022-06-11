@@ -1,9 +1,12 @@
 from __future__ import annotations
 from collections import Counter
-
+from tqdm import tqdm
+import os
 import logging
 import numpy as np
 import pandas as pd
+import pickle
+from scipy import sparse
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +18,11 @@ class BigramLM:
         self.bos_token = bos_token
         self.eos_token = eos_token
         self.unk_token = unk_token
+
+        self._token2idx = None
+        self._idx2token = None
+        self.bigram_counts = None
+        self.token_counts = None
 
     @property
     def token2idx(self):
@@ -39,27 +47,29 @@ class BigramLM:
         self.token_counts = dict(counter.most_common(None))
         self.token_counts[self.unk_token] = 1
         # Create vocabulary to access tokens
+        logger.info("Creating indexes...")
         self._token2idx = {
             token: i
             for token, i in zip(self.token_counts.keys(), range(len(self.token_counts)))
         }
         self._idx2token = {i: token for token, i in self.token_counts.items()}
 
-        # Create bigram count matrix with simple smoothing
-        self.bigram_counts = np.ones(
-            shape=(len(self.token_counts), len(self.token_counts))
+        # Create bigram count matrix
+        self.bigram_counts = sparse.lil_matrix(
+            (len(self.token_counts), len(self.token_counts))
         )
 
         # Fill bigram matrix by counting bigrams
-        for sentence_bigrams in bigrams:
+        logger.info("Filling bigram count matrix...")
+        for sentence_bigrams in tqdm(bigrams):
             for bigram in sentence_bigrams:
-                self.bigram_counts[self._token2idx[bigram[0]]][
-                    self._token2idx[bigram[1]]
+                self.bigram_counts[
+                    self._token2idx[bigram[0]], self._token2idx[bigram[1]]
                 ] += 1
                 logger.debug(
                     f"Bigram count for {bigram}:",
-                    self.bigram_counts[self._token2idx[bigram[0]]][
-                        self._token2idx[bigram[1]]
+                    self.bigram_counts[
+                        self._token2idx[bigram[0]], self._token2idx[bigram[1]]
                     ],
                 )
 
@@ -91,13 +101,64 @@ class BigramLM:
 
         # Calculate P(W_(n-1) | W_n)
         return (
-            self.bigram_counts[self._token2idx[bigram[0]]][self._token2idx[bigram[1]]]
-            / self.token_counts[bigram[0]]
-        )
+            self.bigram_counts[self._token2idx[bigram[0]], self._token2idx[bigram[1]]]
+            + 1
+        ) / (self.token_counts[bigram[0]] + len(self.token2idx))
 
-    def get_bigram_count_df(self):
-        return pd.DataFrame(
-            data=self.bigram_counts,
-            index=self.token_counts.keys(),
-            columns=self.token_counts.keys(),
-        )
+    def serialize(self, model_dir: str):
+        to_save = {
+            "token_counts": self.token_counts,
+            "bigram_counts": self.bigram_counts,
+            "token2idx": self._token2idx,
+            "idx2token": self._idx2token,
+        }
+
+        if not os.path.exists(model_dir):
+            os.makedirs(model_dir)
+
+        for name, obj in to_save.items():
+            logger.info(f"Saving {name}")
+            with open(os.path.join(model_dir, name + ".bin"), "wb") as f:
+                pickle.dump(obj, f)
+
+    @classmethod
+    def from_pretrained(cls, model_dir: str):
+        obj = cls()
+        to_load = {
+            "token_counts": None,
+            "bigram_counts": None,
+            "token2idx": None,
+            "idx2token": None,
+        }
+
+        for name in to_load.keys():
+            with open(os.path.join(model_dir, name + ".bin"), "rb") as f:
+                to_load[name] = pickle.load(f)
+
+        obj.token_counts = to_load["token_counts"]
+        obj.bigram_counts = to_load["bigram_counts"]
+        obj._token2idx = to_load["token2idx"]
+        obj._idx2token = to_load["idx2token"]
+
+        return obj
+
+
+if __name__ == "__main__":
+    import logging
+    import pandas as pd
+    from preprocessing import Preprocessor
+    from itertools import chain
+    from nltk.tokenize import sent_tokenize
+
+    logging.basicConfig(level="INFO")
+    preprocessor = Preprocessor()
+
+    data = pd.read_csv("/home/emrecan/workspace/school/2022/cmpe409/final/dataset.csv")
+    data = data["content"].tolist()
+    data = list(
+        chain.from_iterable([sent_tokenize(t) for t in data if isinstance(t, str)])
+    )
+    data = [list(t) for t in preprocessor(data)]
+    lm = BigramLM()
+    lm.train(data)
+    lm.serialize("model")
