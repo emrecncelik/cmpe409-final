@@ -9,7 +9,6 @@ from spellchecker.data_collection import collect_from_wiki
 from spellchecker.ngrams import BigramLM
 from spellchecker.preprocessing import Preprocessor, turkish_lower
 
-logger.add("train.log")
 
 MODEL_DIR = os.getenv(
     "MODEL_DIR", "/home/emrecan/workspace/school/2022/cmpe409/final/model_test"
