@@ -1,15 +1,15 @@
-import logging
 import os
 from itertools import chain
 
 import pandas as pd
+from loguru import logger
 from nltk.tokenize import sent_tokenize, word_tokenize
 
 from spellchecker.data_collection import collect_from_wiki
 from spellchecker.ngrams import BigramLM
 from spellchecker.preprocessing import Preprocessor, turkish_lower
 
-logging.basicConfig(level="INFO")
+logger.add("train.log")
 
 MODEL_DIR = os.getenv(
     "MODEL_DIR", "/home/emrecan/workspace/school/2022/cmpe409/final/model_test"
@@ -44,7 +44,7 @@ example = word_tokenize(
     )
 )
 indexes = [lm.token2idx[t] for t in example]
-print(
+logger.info(
     pd.DataFrame(
         lm.bigram_counts[indexes].toarray()[:, indexes], index=example, columns=example
     )

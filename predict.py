@@ -1,9 +1,12 @@
 import os
 
+from loguru import logger
 from nltk.metrics.distance import binary_distance, edit_distance, jaccard_distance
 
 from spellchecker import Spellchecker
 from spellchecker.ngrams import BigramLM
+
+logger.add("predict.log")
 
 MODEL_DIR = os.getenv(
     "MODEL_DIR", "/home/emrecan/workspace/school/2022/cmpe409/final/model_test"
@@ -21,6 +24,7 @@ spellchecker = Spellchecker(
 texts = ["Hapsssss cezasına çatırıldı!!!", "Halkk tarafndan kabul gördü."]
 
 for t in texts:
-    print(f"Original: {t}")
+    logger.info(f"Spellchecking: {t}")
     spellchecked = spellchecker.spellcheck(t)
-    print(f"Spellchecked: {spellchecked}")
+    logger.info(f"Original: {t}")
+    logger.info(f"Spellchecked: {spellchecked}")
