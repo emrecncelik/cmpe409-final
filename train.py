@@ -1,5 +1,6 @@
 import os
 import logging
+import pandas as pd
 from itertools import chain
 from nltk.tokenize import sent_tokenize
 from spellchecker.data_collection import collect_from_wiki
@@ -12,9 +13,10 @@ MODEL_DIR = os.getenv("MODEL_DIR", "model_test")
 DATA_PATH = os.getenv("DATA_PATH", "data_test.csv")
 
 # Collect data
-data = collect_from_wiki(100000)
-data.to_csv(DATA_PATH)
+# data = collect_from_wiki(100000)
+# data.to_csv(DATA_PATH)
 
+data = pd.read_csv(DATA_PATH)
 data = data["content"].tolist()
 data = list(chain.from_iterable([sent_tokenize(t) for t in data if isinstance(t, str)]))
 
