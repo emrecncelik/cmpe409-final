@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pandas as pd
-from loguru import logger
 from mediawiki import DisambiguationError, MediaWiki
 from nltk.tokenize import sent_tokenize
 from tqdm import tqdm
