@@ -1,13 +1,11 @@
 from __future__ import annotations
 import re
 import string
-import logging
+from loguru import logger
 from toolz import functoolz
 from nltk.tokenize import word_tokenize
 from joblib import Parallel, delayed
 from tqdm import tqdm
-
-logger = logging.getLogger(__name__)
 
 
 class Preprocessor:

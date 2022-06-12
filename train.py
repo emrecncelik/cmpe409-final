@@ -9,8 +9,12 @@ from spellchecker.ngrams import BigramLM
 
 logging.basicConfig(level="INFO")
 
-MODEL_DIR = os.getenv("MODEL_DIR", "model_test")
-DATA_PATH = os.getenv("DATA_PATH", "data_test.csv")
+MODEL_DIR = os.getenv(
+    "MODEL_DIR", "/home/emrecan/workspace/school/2022/cmpe409/final/model_test"
+)
+DATA_PATH = os.getenv(
+    "DATA_PATH", "/home/emrecan/workspace/school/2022/cmpe409/final/dataset.csv"
+)
 
 # Collect data
 # data = collect_from_wiki(100000)
@@ -29,4 +33,4 @@ data = [list(t) for t in preprocessor(data)]
 # Train language model
 lm = BigramLM()
 lm.train(data)
-lm.serialize("model")  # Save
+lm.serialize(MODEL_DIR)  # Save

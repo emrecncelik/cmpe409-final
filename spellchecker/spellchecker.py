@@ -1,6 +1,6 @@
 from __future__ import annotations
 import re
-import logging
+from loguru import logger
 from difflib import SequenceMatcher
 from typing import Callable
 from spellchecker.ngrams import BigramLM
@@ -12,8 +12,6 @@ from spellchecker.preprocessing import (
 from nltk.metrics.distance import edit_distance
 from joblib import Parallel, delayed
 from nltk.tokenize import word_tokenize
-
-logger = logging.getLogger(__name__)
 
 
 class Spellchecker:

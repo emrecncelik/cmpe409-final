@@ -2,13 +2,11 @@ from __future__ import annotations
 from collections import Counter
 from tqdm import tqdm
 import os
-import logging
+from loguru import logger
 import numpy as np
 import pandas as pd
 import pickle
 from scipy import sparse
-
-logger = logging.getLogger(__name__)
 
 
 class BigramLM:
@@ -66,12 +64,6 @@ class BigramLM:
                 self.bigram_counts[
                     self._token2idx[bigram[0]], self._token2idx[bigram[1]]
                 ] += 1
-                logger.debug(
-                    f"Bigram count for {bigram}:",
-                    self.bigram_counts[
-                        self._token2idx[bigram[0]], self._token2idx[bigram[1]]
-                    ],
-                )
 
     def predict_sentence_probability(self, sentence: list[str]):
         # Pad sentence

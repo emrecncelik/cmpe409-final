@@ -1,13 +1,12 @@
 import os
-import logging
 from spellchecker import Spellchecker
 from spellchecker.ngrams import BigramLM
 from nltk.metrics.distance import edit_distance, jaccard_distance, binary_distance
 
-logging.basicConfig(level="INFO")
 
-MODEL_DIR = os.getenv("MODEL_DIR", "model_test")
-DATA_PATH = os.getenv("DATA_PATH", "data_test.csv")
+MODEL_DIR = os.getenv(
+    "MODEL_DIR", "/home/emrecan/workspace/school/2022/cmpe409/final/model_test"
+)
 
 lm = BigramLM.from_pretrained(MODEL_DIR)
 spellchecker = Spellchecker(
