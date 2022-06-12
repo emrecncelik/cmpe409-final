@@ -1,10 +1,12 @@
 from __future__ import annotations
+
 import re
 import string
-from loguru import logger
-from toolz import functoolz
-from nltk.tokenize import word_tokenize
+
 from joblib import Parallel, delayed
+from loguru import logger
+from nltk.tokenize import word_tokenize
+from toolz import functoolz
 from tqdm import tqdm
 
 

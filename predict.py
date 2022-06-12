@@ -1,8 +1,9 @@
 import os
+
+from nltk.metrics.distance import binary_distance, edit_distance, jaccard_distance
+
 from spellchecker import Spellchecker
 from spellchecker.ngrams import BigramLM
-from nltk.metrics.distance import edit_distance, jaccard_distance, binary_distance
-
 
 MODEL_DIR = os.getenv(
     "MODEL_DIR", "/home/emrecan/workspace/school/2022/cmpe409/final/model_test"
