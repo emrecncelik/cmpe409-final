@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import logging
 import pandas as pd
+from loguru import logger
 from mediawiki import DisambiguationError, MediaWiki
 from nltk.tokenize import sent_tokenize
 from tqdm import tqdm
-
-logger = logging.getLogger(__name__)
 
 
 def collect_from_wiki(min_sent_count: int, n_pages: int = 2) -> pd.DataFrame:
