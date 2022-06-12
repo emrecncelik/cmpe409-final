@@ -1,11 +1,13 @@
-import os
 import logging
-import pandas as pd
+import os
 from itertools import chain
-from nltk.tokenize import sent_tokenize
+
+import pandas as pd
+from nltk.tokenize import sent_tokenize, word_tokenize
+
 from spellchecker.data_collection import collect_from_wiki
-from spellchecker.preprocessing import Preprocessor
 from spellchecker.ngrams import BigramLM
+from spellchecker.preprocessing import Preprocessor, turkish_lower
 
 logging.basicConfig(level="INFO")
 
@@ -34,3 +36,16 @@ data = [list(t) for t in preprocessor(data)]
 lm = BigramLM()
 lm.train(data)
 lm.serialize(MODEL_DIR)  # Save
+
+# Print bigram table
+example = word_tokenize(
+    turkish_lower(
+        "Trakya'dan Anadolu içlerine göçen Frigler daha sonra Misyalılar Kocaeli bölgesinin ilk yerleşik halkı oldukları kabul edilir"
+    )
+)
+indexes = [lm.token2idx[t] for t in example]
+print(
+    pd.DataFrame(
+        lm.bigram_counts[indexes].toarray()[:, indexes], index=example, columns=example
+    )
+)
