@@ -39,6 +39,23 @@ class Spellchecker:
             )
 
     def spellcheck(self, text: str) -> str:
+        """Applies spellchecking to given text.
+
+        Follows this algorithm:
+            If token is not punct, not number, and not in vocab
+                - Deduplicate
+                - Apply spellchecking with Ngrams + String distance
+                    - Get N candidates from the distance function
+                    - Rank candidates based on the Ngram model (Calculate sentence probabilities with each candidate)
+                    - Replace the original token with best candidate
+                - Match the casing of spellchecked token with original token.
+
+        Args:
+            text (str): Text to apply spellchecking on.
+
+        Returns:
+            str: Text with corrected spelling.
+        """
         original = word_tokenize(text)
         spellchecked = word_tokenize(self.preprocessor.lowercase(text))
 
@@ -65,8 +82,7 @@ class Spellchecker:
                 candidates = self._get_candidates(
                     spellchecked[idx],
                 )
-                logger.info("Candidates from the edit distance:")
-                logger.info(candidates)
+                logger.info(f"Candidates from the edit distance: {candidates}")
                 scores = []
                 for candidate, dist in candidates:
                     sentence_temp = spellchecked.copy()
@@ -83,8 +99,9 @@ class Spellchecker:
                 ranked_candidates = sorted(
                     zip(candidates, scores), key=lambda tup: tup[1], reverse=True
                 )
-                logger.info("Candidates ranked by the language model:")
-                logger.info(ranked_candidates)
+                logger.info(
+                    f"Candidates ranked by the language model: {ranked_candidates}"
+                )
                 logger.info(f"Best candidate: {ranked_candidates[0][0][0]}")
                 spellchecked[idx] = self._apply_case_transfer(
                     original[idx], ranked_candidates[0][0][0]
@@ -102,9 +119,28 @@ class Spellchecker:
         return spellchecked_str.strip()
 
     def _token_in_vocab(self, token: str) -> bool:
+        """Check if the token is present in the language model's vocab.
+
+        Args:
+            token (str): Token to check if present
+
+        Returns:
+            bool: True if token exists in vocab
+        """
         return token in self.lang_model.token2idx
 
-    def _get_candidates(self, token: str, n: int = 10) -> list[str]:
+    def _get_candidates(self, token: str, n: int = 10) -> list[tuple[str, int]]:
+        """Get a list of candidates based on the distance to the given
+        token. Distance is calculcated by distance function given in the initialization.
+
+        Args:
+            token (str): Token to get candidates for.
+            n (int, optional): Number of candidates to return. Defaults to 10.
+
+        Returns:
+            list[tuple[str, int]]: List of tuples containing candidates at the 0th index
+            and distance at 1st index, sorted ascending.
+        """
         distances = []
 
         distances = Parallel(n_jobs=self.n_jobs, backend="multiprocessing")(
@@ -120,11 +156,30 @@ class Spellchecker:
         return matchobj.group(0)[0]
 
     def _apply_deduplication(self, token: str) -> str:
+        """Deduplicate repeating chars in a token.
+        eg. Helloooooo -> Hello
+
+        Args:
+            token (str): Token to apply deduplication.
+
+        Returns:
+            str: Deduplicated token.
+        """
         token = self.deduplication_pattern.sub(self._dedup_repl, token)
         logger.info(f"Deduplicated: {token}")
         return token
 
     def _apply_case_transfer(self, token: str, spellchecked_token: str) -> str:
+        """Transfers casing of the original token to spellchecked token
+        to maintain the original version of the text.
+
+        Args:
+            token (str): Original token with correct casing.
+            spellchecked_token (str): Spellchecked token with lowercase.
+
+        Returns:
+            str: Spellchecked token transformed into original casing.
+        """
         if len(token) == len(spellchecked_token):
             token = case_transfer_matching(token, spellchecked_token)
         else:

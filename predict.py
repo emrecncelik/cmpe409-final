@@ -18,5 +18,9 @@ spellchecker = Spellchecker(
     n_jobs=2,
 )
 
-print(spellchecker.spellcheck("Hapsssss cezasına çatırıldı!!!"))
-print(spellchecker.spellcheck("Halkk tarafndan kabul gördü."))
+texts = ["Hapsssss cezasına çatırıldı!!!", "Halkk tarafndan kabul gördü."]
+
+for t in texts:
+    print(f"Original: {t}")
+    spellchecked = spellchecker.spellcheck(t)
+    print(f"Spellchecked: {spellchecked}")
