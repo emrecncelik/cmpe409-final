@@ -141,24 +141,3 @@ class BigramLM:
         obj._idx2token = to_load["idx2token"]
 
         return obj
-
-
-if __name__ == "__main__":
-    import logging
-    import pandas as pd
-    from preprocessing import Preprocessor
-    from itertools import chain
-    from nltk.tokenize import sent_tokenize
-
-    logging.basicConfig(level="INFO")
-    preprocessor = Preprocessor()
-
-    data = pd.read_csv("/home/emrecan/workspace/school/2022/cmpe409/final/dataset.csv")
-    data = data["content"].tolist()
-    data = list(
-        chain.from_iterable([sent_tokenize(t) for t in data if isinstance(t, str)])
-    )
-    data = [list(t) for t in preprocessor(data)]
-    lm = BigramLM()
-    lm.train(data)
-    lm.serialize("model")

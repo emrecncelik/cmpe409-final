@@ -49,10 +49,3 @@ def collect_from_wiki(min_sent_count: int, n_pages: int = 2) -> pd.DataFrame:
             "content": collected_page_contents,
         }
     )
-
-
-if __name__ == "__main__":
-    data = collect_from_wiki(100000)
-    data["sents"] = data["content"].apply(sent_tokenize)
-    data["sent_counts"] = data["sents"].apply(len)
-    print(data["sent_counts"].sum())
