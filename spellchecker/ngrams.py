@@ -1,12 +1,14 @@
 from __future__ import annotations
-from collections import Counter
-from tqdm import tqdm
+
 import os
-from loguru import logger
+import pickle
+from collections import Counter
+
 import numpy as np
 import pandas as pd
-import pickle
+from loguru import logger
 from scipy import sparse
+from tqdm import tqdm
 
 
 class BigramLM:
