@@ -1,17 +1,16 @@
 from __future__ import annotations
+
 import re
-from loguru import logger
 from difflib import SequenceMatcher
 from typing import Callable
-from spellchecker.ngrams import BigramLM
-from spellchecker.preprocessing import (
-    Preprocessor,
-    turkish_lower,
-    turkish_upper,
-)
-from nltk.metrics.distance import edit_distance
+
 from joblib import Parallel, delayed
+from loguru import logger
+from nltk.metrics.distance import edit_distance
 from nltk.tokenize import word_tokenize
+
+from spellchecker.ngrams import BigramLM
+from spellchecker.preprocessing import Preprocessor, turkish_lower, turkish_upper
 
 
 class Spellchecker:
